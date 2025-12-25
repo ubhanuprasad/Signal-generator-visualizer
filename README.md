@@ -48,8 +48,8 @@ An interactive web application for generating and visualizing fundamental signal
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd signal-generator-visualizer
+   git clone https://github.com/ubhanuprasad/Signal-generator-visualizer.git
+   cd Signal-generator-visualizer
    ```
 
 2. **Install dependencies**
