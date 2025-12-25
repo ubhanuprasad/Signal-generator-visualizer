@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signal Generator & Visualizer - ECE Academic Project</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom CSS Variables for theming */
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #1d4ed8;
+            --background: #ffffff;
+            --foreground: #111827;
+            --muted: #f3f4f6;
+            --border: #e5e7eb;
+            --card: #ffffff;
+            --accent: #f9fafb;
+        }
+
+        .dark {
+            --primary: #60a5fa;
+            --primary-dark: #3b82f6;
+            --background: #111827;
+            --foreground: #f9fafb;
+            --muted: #374151;
+            --border: #4b5563;
+            --card: #1f2937;
+            --accent: #374151;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--foreground);
+            transition: all 0.3s ease;
+        }
+
+        .card {
+            background-color: var(--card);
+            border: 1px solid var(--border);
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            background: var(--muted);
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        .glow-effect {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glow-effect::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #3b82f6, #10b981, #f59e0b, #ef4444);
+            border-radius: inherit;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .glow-effect:hover::before {
+            opacity: 0.7;
+        }
+
+        /* Enhanced Mathematical Equation Styling */
+        .equation-container {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border: 2px solid #3b82f6;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .dark .equation-container {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border-color: #60a5fa;
+            box-shadow: 0 4px 12px rgba(96, 165, 250, 0.15);
+        }
+
+        .equation-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
+        }
+
+        .equation-text {
+            font-family: 'Courier New', 'Monaco', monospace;
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .parameter-highlight {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+
+        .amplitude-param {
+            background-color: rgba(34, 197, 94, 0.1);
+            color: #059669;
+        }
+
+        .frequency-param {
+            background-color: rgba(147, 51, 234, 0.1);
+            color: #7c3aed;
+        }
+
+        .dark .amplitude-param {
+            background-color: rgba(34, 197, 94, 0.2);
+            color: #10b981;
+        }
+
+        .dark .frequency-param {
+            background-color: rgba(147, 51, 234, 0.2);
+            color: #a855f7;
+        }
+
+        /* Interactive Features Styling */
+        .interactive-card {
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .interactive-card:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .interactive-card:active {
+            transform: translateY(-2px) scale(1.01);
+        }
+
+        /* Highlight Animation for Target Sections */
+        .highlight-pulse {
+            animation: highlightPulse 2s ease-in-out;
+            border: 2px solid #3b82f6;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+
+        @keyframes highlightPulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+                border-color: #3b82f6;
+            }
+            50% {
+                box-shadow: 0 0 20px 10px rgba(59, 130, 246, 0.3);
+                border-color: #1d4ed8;
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+                border-color: #3b82f6;
+            }
+        }
+
+        /* Smooth Scroll Behavior */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Focus Highlight for Controls */
+        .control-highlight {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1));
+            border: 2px solid #3b82f6;
+            border-radius: 8px;
+            padding: 8px;
+            transition: all 0.5s ease;
+        }
+
+        /* Chatbot Modal Styling */
+        .chatbot-modal {
+            backdrop-filter: blur(4px);
+        }
+
+        /* Chat Message Styling */
+        .prose {
+            max-width: none;
+        }
+
+        .prose strong {
+            color: #1f2937;
+            font-weight: 600;
+        }
+
+        .dark .prose strong {
+            color: #f9fafb;
+        }
+
+        .prose code {
+            background-color: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .dark .prose code {
+            background-color: #374151;
+            color: #e5e7eb;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Header -->
+    <header class="border-b border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 backdrop-blur">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-600 text-white">
+                        ⚡
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold">Signal Generator & Visualizer</h1>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">ECE Academic Project - Signals & Systems</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button id="chatbotToggle" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors">
+                        Help Assistant
+                    </button>
+                    <button id="themeToggle" class="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                        <span id="themeIcon">🌙</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Control Panel -->
+            <div class="lg:col-span-1">
+                <div class="card rounded-xl p-6 shadow-sm glow-effect">
+                    <div class="flex items-center space-x-2 mb-6">
+                        <span class="text-blue-600">⚙️</span>
+                        <h2 class="text-xl font-semibold">Signal Parameters</h2>
+                    </div>
+
+                    <div id="signalTypeSection" class="space-y-6">
+                        <!-- Signal Type Selection -->
+                        <div id="signalTypeControls">
+                            <label class="block text-sm font-medium mb-3">Signal Type</label>
+                            <div class="grid grid-cols-1 gap-2">
+                                <button class="signal-type-btn p-3 rounded-lg border text-left transition-all duration-200 btn-primary" data-type="sine">
+                                    Sine Wave
+                                </button>
+                                <button class="signal-type-btn p-3 rounded-lg border text-left transition-all duration-200" data-type="cosine">
+                                    Cosine Wave
+                                </button>
+                                <button class="signal-type-btn p-3 rounded-lg border text-left transition-all duration-200" data-type="square">
+                                    Square Wave
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Frequency Control -->
+                        <div id="parameterControls">
+                            <label class="block text-sm font-medium mb-2">
+                                Frequency: <span id="frequencyValue">2</span> Hz
+                            </label>
+                            <input type="range" id="frequencySlider" class="slider w-full" min="0.1" max="10" step="0.1" value="2">
+                            <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                <span>0.1 Hz</span>
+                                <span>10 Hz</span>
+                            </div>
+                        </div>
+
+                        <!-- Amplitude Control -->
+                        <div>
+                            <label class="block text-sm font-medium mb-2">
+                                Amplitude: <span id="amplitudeValue">1</span>
+                            </label>
+                            <input type="range" id="amplitudeSlider" class="slider w-full" min="0.1" max="5" step="0.1" value="1">
+                            <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                <span>0.1</span>
+                                <span>5.0</span>
+                            </div>
+                        </div>
+
+                        <!-- Mathematical Equation Display -->
+                        <div id="equationSection" class="equation-container p-6 rounded-lg">
+                            <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
+                                <span class="mr-2">📐</span>Mathematical Equation
+                            </h3>
+                            <div class="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                                <div class="text-center">
+                                    <span class="text-lg font-semibold text-gray-700 dark:text-gray-300">x(t) = </span>
+                                    <span id="equationDisplay" class="equation-text text-blue-600 dark:text-blue-400">
+                                        1 sin(2π × 2 × t)
+                                    </span>
+                                </div>
+                                <div class="mt-3 text-center text-sm text-gray-600 dark:text-gray-400">
+                                    <span>Where: A = </span><span id="amplitudeParam" class="parameter-highlight amplitude-param">1</span>
+                                    <span class="mx-2">|</span>
+                                    <span>f = </span><span id="frequencyParam" class="parameter-highlight frequency-param">2</span><span> Hz</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualization Panel -->
+            <div class="lg:col-span-2">
+                <div class="card rounded-xl p-6 shadow-sm glow-effect">
+                    <div class="h-96 w-full">
+                        <canvas id="signalChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Signal Properties -->
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="card rounded-lg p-4">
+                        <h3 class="text-sm font-medium text-gray-600 dark:text-gray-400">Frequency</h3>
+                        <p id="displayFreq" class="text-2xl font-bold">2 Hz</p>
+                    </div>
+                    <div class="card rounded-lg p-4">
+                        <h3 class="text-sm font-medium text-gray-600 dark:text-gray-400">Period</h3>
+                        <p id="displayPeriod" class="text-2xl font-bold">0.500 s</p>
+                    </div>
+                    <div class="card rounded-lg p-4">
+                        <h3 class="text-sm font-medium text-gray-600 dark:text-gray-400">Amplitude</h3>
+                        <p id="displayAmp" class="text-2xl font-bold">1</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Demo Section -->
+    <section class="py-16 bg-gray-50 dark:bg-gray-800/50">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold mb-4">Interactive Features</h2>
+                <p class="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                    Explore the advanced signal generation capabilities perfect for ECE academic demonstrations and learning.
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div id="signalGenCard" class="card rounded-xl p-6 glow-effect interactive-card cursor-pointer transition-all duration-300 hover:scale-105">
+                    <div class="w-fit rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 p-2 mb-4">
+                        📊
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Signal Generation</h3>
+                    <p class="text-gray-600 dark:text-gray-400 mb-3">Generate fundamental signals used in ECE coursework including sine, cosine, and square waves.</p>
+                    <div class="text-sm text-blue-600 dark:text-blue-400 font-medium">Click to explore signal types →</div>
+                </div>
+                
+                <div id="parameterCard" class="card rounded-xl p-6 glow-effect interactive-card cursor-pointer transition-all duration-300 hover:scale-105">
+                    <div class="w-fit rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 p-2 mb-4">
+                        ⚙️
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Parameter Control</h3>
+                    <p class="text-gray-600 dark:text-gray-400 mb-3">Real-time adjustment of frequency and amplitude with instant visualization updates.</p>
+                    <div class="text-sm text-green-600 dark:text-green-400 font-medium">Click to adjust parameters →</div>
+                </div>
+                
+                <div id="academicCard" class="card rounded-xl p-6 glow-effect interactive-card cursor-pointer transition-all duration-300 hover:scale-105">
+                    <div class="w-fit rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 p-2 mb-4">
+                        🎓
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Academic Focus</h3>
+                    <p class="text-gray-600 dark:text-gray-400 mb-3">Built specifically for Signals & Systems and DSP coursework with proper mathematical equations.</p>
+                    <div class="text-sm text-purple-600 dark:text-purple-400 font-medium">Click to view equations →</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Project Credit Footer -->
+    <footer class="py-8 bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+                Project developed by <strong class="text-gray-800 dark:text-gray-200">U Bhanu Prasad</strong> | 
+                Contact: <span class="font-mono">9652442961</span>
+            </p>
+            <p class="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                Signal Generator & Visualizer - ECE Academic Project
+            </p>
+        </div>
+    </footer>
+
+    <!-- ECE Academic Chatbot Modal -->
+    <div id="chatbotModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+                <!-- Chatbot Header -->
+                <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
+                            ECE
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">ECE Academic Assistant</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Electronics & Communication Engineering</p>
+                        </div>
+                    </div>
+                    <button id="closeChatbot" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+                        <span class="text-gray-500 dark:text-gray-400 text-xl">×</span>
+                    </button>
+                </div>
+
+                <!-- Chat Messages Area -->
+                <div id="chatMessages" class="flex-1 overflow-y-auto p-6 space-y-4 min-h-[300px] max-h-[400px]">
+                    <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                        <p class="text-sm text-blue-800 dark:text-blue-200">
+                            <strong>ECE Academic Assistant Ready</strong><br>
+                            Ask any Electronics and Communication Engineering question for formal, exam-oriented explanations.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Chat Input Area -->
+                <div class="p-6 border-t border-gray-200 dark:border-gray-700">
+                    <div class="flex space-x-3">
+                        <input 
+                            type="text" 
+                            id="chatInput" 
+                            placeholder="Ask any ECE core question..."
+                            class="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                        <button 
+                            id="sendMessage" 
+                            class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                        >
+                            Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ECE Academic Chatbot Implementation
+        class ECEChatbot {
+            constructor() {
+                this.isOpen = false;
+                this.initializeEventListeners();
+            }
+
+            initializeEventListeners() {
+                // Chatbot toggle
+                document.getElementById('chatbotToggle').addEventListener('click', () => {
+                    this.toggleChatbot();
+                });
+
+                // Close chatbot
+                document.getElementById('closeChatbot').addEventListener('click', () => {
+                    this.closeChatbot();
+                });
+
+                // Send message
+                document.getElementById('sendMessage').addEventListener('click', () => {
+                    this.sendMessage();
+                });
+
+                // Enter key to send
+                document.getElementById('chatInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.sendMessage();
+                    }
+                });
+
+                // Close on outside click
+                document.getElementById('chatbotModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'chatbotModal') {
+                        this.closeChatbot();
+                    }
+                });
+            }
+
+            initializeKnowledgeBase() {
+                this.knowledgeBase = {
+                    // Signals & Systems
+                    'fourier transform': {
+                        definition: 'The Fourier Transform decomposes a time-domain signal into its frequency components, representing the signal as a sum of sinusoidal functions.',
+                        explanation: 'It transforms signals from time domain to frequency domain, enabling analysis of spectral content. The transform reveals which frequencies are present in a signal and their relative magnitudes.',
+                        keyPoints: [
+                            'Converts time domain to frequency domain',
+                            'Reveals spectral content of signals',
+                            'Enables frequency domain analysis',
+                            'Foundation for filter design',
+                            'Essential for communication systems'
+                        ],
+                        example: 'In audio processing, Fourier Transform identifies individual frequency components in music, enabling equalization and filtering.',
+                        equation: 'X(ω) = ∫ x(t)e^(-jωt) dt'
+                    },
+
+                    'laplace transform': {
+                        definition: 'The Laplace Transform converts time-domain functions into complex frequency domain (s-domain) for easier analysis of linear time-invariant systems.',
+                        explanation: 'It extends Fourier analysis to include exponentially growing/decaying signals. The s-domain representation simplifies differential equations into algebraic equations.',
+                        keyPoints: [
+                            'Converts differential equations to algebraic',
+                            'Handles exponentially varying signals',
+                            'Enables transfer function analysis',
+                            'Simplifies system stability analysis',
+                            'Foundation for control system design'
+                        ],
+                        example: 'In control systems, Laplace Transform analyzes system response and stability without solving complex differential equations.',
+                        equation: 'X(s) = ∫₀^∞ x(t)e^(-st) dt'
+                    },
+
+                    'convolution': {
+                        definition: 'Convolution is a mathematical operation that combines two functions to produce a third function, representing the overlap between them as one function is shifted over another.',
+                        explanation: 'In signal processing, convolution describes the output of a linear time-invariant system when an input signal passes through it. It mathematically represents filtering operations.',
+                        keyPoints: [
+                            'Describes LTI system output',
+                            'Represents filtering operations',
+                            'Commutative and associative operation',
+                            'Time-domain multiplication becomes frequency-domain convolution',
+                            'Foundation for impulse response analysis'
+                        ],
+                        example: 'Audio reverb effects use convolution with impulse responses of concert halls to simulate acoustic environments.',
+                        equation: 'y(t) = x(t) * h(t) = ∫ x(τ)h(t-τ) dτ'
+                    },
+
+                    // Digital Signal Processing
+                    'sampling theorem': {
+                        definition: 'The Sampling Theorem states that a continuous signal can be perfectly reconstructed from its samples if the sampling frequency is at least twice the highest frequency component in the signal.',
+                        explanation: 'Also known as Nyquist-Shannon theorem, it establishes the minimum sampling rate required to avoid aliasing. The critical frequency (Nyquist frequency) is half the sampling rate.',
+                        keyPoints: [
+                            'Sampling frequency ≥ 2 × maximum signal frequency',
+                            'Prevents aliasing distortion',
+                            'Enables perfect signal reconstruction',
+                            'Foundation of digital signal processing',
+                            'Critical for ADC design'
+                        ],
+                        example: 'CD audio uses 44.1 kHz sampling to capture frequencies up to 22.05 kHz, covering human hearing range.',
+                        equation: 'fs ≥ 2fm (Nyquist criterion)'
+                    },
+
+                    'z transform': {
+                        definition: 'The Z-Transform is the discrete-time equivalent of the Laplace Transform, converting discrete-time signals into complex frequency domain for analysis.',
+                        explanation: 'It enables analysis of discrete-time systems, digital filters, and stability assessment. The Z-domain representation simplifies difference equations into algebraic form.',
+                        keyPoints: [
+                            'Discrete-time equivalent of Laplace Transform',
+                            'Analyzes digital systems and filters',
+                            'Converts difference equations to algebraic',
+                            'Enables stability analysis via pole-zero plots',
+                            'Foundation for digital filter design'
+                        ],
+                        example: 'Digital filter design uses Z-Transform to determine coefficients and analyze frequency response.',
+                        equation: 'X(z) = Σ x[n]z^(-n)'
+                    },
+
+                    'fft': {
+                        definition: 'Fast Fourier Transform (FFT) is an efficient algorithm to compute the Discrete Fourier Transform (DFT), reducing computational complexity from O(N²) to O(N log N).',
+                        explanation: 'FFT enables real-time spectral analysis by dramatically reducing computation time. It exploits symmetries in DFT calculations using divide-and-conquer approach.',
+                        keyPoints: [
+                            'Efficient DFT computation algorithm',
+                            'Reduces complexity from O(N²) to O(N log N)',
+                            'Enables real-time spectral analysis',
+                            'Foundation for modern DSP applications',
+                            'Requires input length to be power of 2'
+                        ],
+                        example: 'Spectrum analyzers use FFT to display real-time frequency content of audio and RF signals.',
+                        equation: 'Computational complexity: O(N log₂ N)'
+                    },
+
+                    // Communication Systems
+                    'modulation': {
+                        definition: 'Modulation is the process of varying carrier signal parameters (amplitude, frequency, or phase) according to the information signal for efficient transmission.',
+                        explanation: 'Modulation shifts signal spectrum to higher frequencies, enabling long-distance transmission, multiple channel sharing, and improved noise immunity.',
+                        keyPoints: [
+                            'Shifts signal to higher frequencies',
+                            'Enables efficient antenna design',
+                            'Allows frequency division multiplexing',
+                            'Improves noise immunity',
+                            'Types: AM, FM, PM, and digital variants'
+                        ],
+                        example: 'FM radio modulates audio signals onto carrier frequencies (88-108 MHz) for wireless transmission.',
+                        equation: 'AM: s(t) = Ac[1 + kam(t)]cos(2πfct)'
+                    },
+
+                    'baseband passband': {
+                        definition: 'Baseband transmission sends the original signal without modulation, whereas passband transmission involves modulating the signal onto a high-frequency carrier.',
+                        explanation: 'Baseband transmission occupies low frequencies and is suitable for short distances. Passband transmission shifts the signal spectrum to higher frequencies, enabling long-distance communication and efficient bandwidth usage.',
+                        keyPoints: [
+                            'Baseband uses no carrier wave',
+                            'Passband uses carrier modulation',
+                            'Passband supports frequency multiplexing',
+                            'Baseband is limited in transmission range',
+                            'Passband enables wireless communication'
+                        ],
+                        example: 'Ethernet uses baseband transmission, while radio communication uses passband transmission.'
+                    },
+
+                    // Add more ECE topics as needed...
+                };
+            }
+
+            toggleChatbot() {
+                if (this.isOpen) {
+                    this.closeChatbot();
+                } else {
+                    this.openChatbot();
+                }
+            }
+
+            openChatbot() {
+                document.getElementById('chatbotModal').classList.remove('hidden');
+                document.getElementById('chatInput').focus();
+                this.isOpen = true;
+            }
+
+            closeChatbot() {
+                document.getElementById('chatbotModal').classList.add('hidden');
+                this.isOpen = false;
+            }
+
+            sendMessage() {
+                const input = document.getElementById('chatInput');
+                const message = input.value.trim();
+                
+                if (!message) return;
+
+                // Add user message
+                this.addMessage(message, 'user');
+                
+                // Clear input
+                input.value = '';
+
+                // Generate response
+                setTimeout(() => {
+                    const response = this.generateResponse(message);
+                    this.addMessage(response, 'assistant');
+                }, 500);
+            }
+
+            addMessage(content, sender) {
+                const messagesContainer = document.getElementById('chatMessages');
+                const messageDiv = document.createElement('div');
+                
+                if (sender === 'user') {
+                    messageDiv.className = 'flex justify-end';
+                    messageDiv.innerHTML = `
+                        <div class="bg-blue-600 text-white p-3 rounded-lg max-w-[80%]">
+                            ${content}
+                        </div>
+                    `;
+                } else {
+                    messageDiv.className = 'flex justify-start';
+                    messageDiv.innerHTML = `
+                        <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg max-w-[90%]">
+                            <div class="prose dark:prose-invert max-w-none">
+                                ${content}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                messagesContainer.appendChild(messageDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            generateResponse(question) {
+                const lowerQuestion = question.toLowerCase();
+                
+                // Handle greetings
+                if (['hi', 'hello', 'hey'].includes(lowerQuestion.trim())) {
+                    return 'Hello. Ask any ECE core question.';
+                }
+
+                // Direct ECE knowledge base with comprehensive coverage
+                return this.getECEAnswer(lowerQuestion);
+            }
+
+            getECEAnswer(question) {
+                // FFT vs DFT - Computational Complexity
+                if (question.includes('fft') && (question.includes('dft') || question.includes('faster') || question.includes('complexity') || question.includes('efficient'))) {
+                    return this.formatResponse({
+                        definition: 'The Fast Fourier Transform (FFT) is an efficient algorithm for computing the Discrete Fourier Transform (DFT) by reducing computational complexity from O(N²) to O(N log N).',
+                        explanation: 'The DFT directly computes frequency components using nested summations requiring N² complex multiplications. FFT exploits symmetry and periodicity in complex exponentials, recursively decomposing the DFT into smaller subproblems using divide-and-conquer strategy.',
+                        keyPoints: [
+                            'DFT requires O(N²) complex multiplications',
+                            'FFT reduces complexity to O(N log N) operations',
+                            'Uses Cooley-Tukey divide-and-conquer algorithm',
+                            'Exploits symmetry in twiddle factors',
+                            'Enables real-time spectral analysis',
+                            'Requires input length to be power of 2'
+                        ],
+                        mathematical: 'FFT recursively splits N-point DFT into two (N/2)-point DFTs, reducing multiplications by factor of N/log₂N.',
+                        example: 'For N=1024 samples: DFT needs ~1M operations, FFT needs only ~10K operations.',
+                        equation: 'Complexity reduction: O(N²) → O(N log₂ N)'
+                    });
+                }
+
+                // Fourier Transform
+                if (question.includes('fourier') && question.includes('transform')) {
+                    return this.formatResponse({
+                        definition: 'The Fourier Transform decomposes a time-domain signal into its frequency components, representing the signal as a continuous spectrum of sinusoidal functions.',
+                        explanation: 'It correlates the input signal with complex exponentials at different frequencies, revealing which frequencies are present and their relative magnitudes. The transform enables frequency-domain analysis, filtering, and spectral manipulation.',
+                        keyPoints: [
+                            'Converts time domain to frequency domain representation',
+                            'Reveals spectral content and frequency components',
+                            'Enables frequency-domain filtering and analysis',
+                            'Invertible transformation preserving signal information',
+                            'Foundation for communication and signal processing',
+                            'Basis functions are complex exponentials'
+                        ],
+                        mathematical: 'Uses complex exponentials e^(-jωt) as orthogonal basis functions to decompose arbitrary signals into frequency components.',
+                        example: 'Audio equalizers analyze music using Fourier Transform to boost or attenuate specific frequency bands.',
+                        equation: 'X(ω) = ∫_{-∞}^{∞} x(t)e^{-jωt} dt'
+                    });
+                }
+
+                // Sampling Theorem / Nyquist
+                if (question.includes('sampling') && (question.includes('theorem') || question.includes('nyquist') || question.includes('aliasing'))) {
+                    return this.formatResponse({
+                        definition: 'The Sampling Theorem states that a continuous signal can be perfectly reconstructed from its samples if the sampling frequency is at least twice the highest frequency component in the signal.',
+                        explanation: 'When fs ≥ 2fm (Nyquist criterion), sampling creates non-overlapping spectral replicas that can be separated by ideal low-pass filtering. Violation causes aliasing where high frequencies fold back into the baseband.',
+                        keyPoints: [
+                            'Minimum sampling rate: fs ≥ 2fm (Nyquist rate)',
+                            'Prevents aliasing and spectral overlap',
+                            'Enables perfect signal reconstruction',
+                            'Nyquist frequency is fs/2',
+                            'Anti-aliasing filters required in practice',
+                            'Foundation of all digital signal processing'
+                        ],
+                        mathematical: 'Sampling creates spectral replicas at integer multiples of fs; non-overlapping replicas ensure perfect reconstruction.',
+                        example: 'CD audio samples at 44.1 kHz to capture frequencies up to 22.05 kHz, covering human hearing range (20 Hz - 20 kHz).',
+                        equation: 'fs ≥ 2fm (Nyquist criterion)'
+                    });
+                }
+
+                // Root Locus
+                if (question.includes('root') && question.includes('locus')) {
+                    return this.formatResponse({
+                        definition: 'Root locus is a graphical method for examining how the roots of the characteristic equation change as a system parameter (typically gain K) varies from zero to infinity.',
+                        explanation: 'The root locus shows the path traced by closed-loop poles as the loop gain changes. It provides insight into system stability, transient response, and the effect of parameter variations on system performance.',
+                        keyPoints: [
+                            'Shows closed-loop pole locations vs. gain variation',
+                            'Starts at open-loop poles (K=0) and ends at zeros (K=∞)',
+                            'Number of branches equals number of poles',
+                            'Asymptotes approach open-loop zeros at infinity',
+                            'Breakaway points occur where multiple roots coincide',
+                            'Stability determined by pole locations relative to imaginary axis'
+                        ],
+                        mathematical: 'Based on characteristic equation 1 + KG(s)H(s) = 0, where roots satisfy angle condition ∠G(s)H(s) = ±180°(2k+1).',
+                        example: 'Designing PID controllers uses root locus to select gain values that achieve desired damping and settling time.',
+                        equation: '1 + KG(s)H(s) = 0, Angle condition: ∠G(s)H(s) = ±180°(2k+1)'
+                    });
+                }
+
+                // Modulation
+                if (question.includes('modulation') || (question.includes('am') && question.includes('fm')) || question.includes('carrier')) {
+                    return this.formatResponse({
+                        definition: 'Modulation is the process of varying carrier signal parameters (amplitude, frequency, or phase) according to the information signal for efficient transmission over communication channels.',
+                        explanation: 'Modulation shifts the signal spectrum to higher frequencies around a carrier, enabling efficient antenna design, long-distance propagation, and frequency division multiplexing. It also provides immunity against noise and interference.',
+                        keyPoints: [
+                            'Shifts baseband signal to higher frequencies',
+                            'Enables efficient antenna design and propagation',
+                            'Allows frequency division multiplexing (FDM)',
+                            'Provides noise immunity and interference rejection',
+                            'Types: AM, FM, PM, and digital variants (ASK, FSK, PSK)',
+                            'Essential for wireless and long-distance communication'
+                        ],
+                        mathematical: 'Amplitude modulation: multiplication in time domain becomes convolution in frequency domain, shifting spectrum.',
+                        example: 'FM radio modulates audio (0-15 kHz) onto carriers (88-108 MHz) for wireless broadcast transmission.',
+                        equation: 'AM: s(t) = Ac[1 + kam(t)]cos(2πfct), FM: s(t) = Accos[2πfct + kf∫m(τ)dτ]'
+                    });
+                }
+
+                // Baseband vs Passband
+                if ((question.includes('baseband') && question.includes('passband')) || question.includes('transmission')) {
+                    return this.formatResponse({
+                        definition: 'Baseband transmission sends the original signal directly without modulation, while passband transmission modulates the signal onto a high-frequency carrier before transmission.',
+                        explanation: 'Baseband occupies frequencies from DC to signal bandwidth, suitable for guided media and short distances. Passband shifts spectrum to higher frequencies around carrier, enabling wireless transmission and efficient spectrum utilization.',
+                        keyPoints: [
+                            'Baseband: no carrier modulation, DC to bandwidth',
+                            'Passband: carrier modulation, spectrum shifted to fc',
+                            'Baseband limited to guided media and short distances',
+                            'Passband enables wireless and long-distance transmission',
+                            'Passband supports frequency division multiplexing',
+                            'Different antenna and propagation characteristics'
+                        ],
+                        mathematical: 'Baseband spectrum: 0 to B Hz. Passband spectrum: fc-B/2 to fc+B/2 Hz, where fc >> B.',
+                        example: 'Ethernet uses baseband transmission over cables, while cellular networks use passband transmission over radio waves.',
+                        equation: 'Baseband: s(t) = m(t), Passband: s(t) = m(t)cos(2πfct)'
+                    });
+                }
+
+                // Laplace Transform
+                if (question.includes('laplace') && question.includes('transform')) {
+                    return this.formatResponse({
+                        definition: 'The Laplace Transform converts time-domain functions into complex frequency domain (s-domain) for simplified analysis of linear time-invariant systems and differential equations.',
+                        explanation: 'It extends Fourier analysis to include exponentially growing/decaying signals using complex variable s = σ + jω. The s-domain representation converts differential equations into algebraic equations, enabling easier system analysis and design.',
+                        keyPoints: [
+                            'Converts differential equations to algebraic form',
+                            'Handles exponentially varying and unstable signals',
+                            'Enables transfer function analysis H(s) = Y(s)/X(s)',
+                            'Simplifies convolution to multiplication',
+                            'Foundation for control system design and stability analysis',
+                            'Region of convergence determines signal properties'
+                        ],
+                        mathematical: 'Complex variable s = σ + jω allows analysis of both transient (σ) and frequency (jω) behavior simultaneously.',
+                        example: 'Control systems use Laplace Transform to design PID controllers and analyze system stability using pole-zero plots.',
+                        equation: 'X(s) = ∫₀^∞ x(t)e^{-st} dt, s = σ + jω'
+                    });
+                }
+
+                // Z-Transform
+                if (question.includes('z') && question.includes('transform')) {
+                    return this.formatResponse({
+                        definition: 'The Z-Transform is the discrete-time equivalent of the Laplace Transform, converting discrete-time signals and systems into complex z-domain for digital system analysis.',
+                        explanation: 'It enables analysis of discrete-time systems, digital filters, and stability assessment. The z-domain representation simplifies difference equations into algebraic form and provides insight into digital system behavior through pole-zero analysis.',
+                        keyPoints: [
+                            'Discrete-time equivalent of Laplace Transform',
+                            'Converts difference equations to algebraic form',
+                            'Enables digital filter design and analysis',
+                            'Stability determined by pole locations inside unit circle',
+                            'z^(-1) represents unit delay operator',
+                            'Foundation for DSP and digital control systems'
+                        ],
+                        mathematical: 'Complex variable z represents unit delay, where z^(-1) = e^(-jωT) relates to frequency response on unit circle.',
+                        example: 'Digital audio equalizers use Z-Transform to design IIR and FIR filters for frequency shaping.',
+                        equation: 'X(z) = Σ_{n=0}^{∞} x[n]z^{-n}'
+                    });
+                }
+
+                // Convolution
+                if (question.includes('convolution')) {
+                    return this.formatResponse({
+                        definition: 'Convolution is a mathematical operation that combines two functions to produce a third function, representing how the shape of one function is modified by another.',
+                        explanation: 'In signal processing, convolution describes the output of a linear time-invariant system when an input signal passes through it. It mathematically represents the system\'s impulse response shaping the input signal.',
+                        keyPoints: [
+                            'Describes LTI system input-output relationship',
+                            'Represents filtering and system response operations',
+                            'Commutative: x*h = h*x, and associative operations',
+                            'Time-domain convolution equals frequency-domain multiplication',
+                            'Impulse response completely characterizes LTI system',
+                            'Foundation for digital filter implementation'
+                        ],
+                        mathematical: 'Involves flipping one function, shifting it by τ, multiplying with other function, and integrating over all τ.',
+                        example: 'Audio reverb processors convolve dry audio with impulse responses of concert halls to simulate acoustic environments.',
+                        equation: 'y(t) = x(t) * h(t) = ∫_{-∞}^{∞} x(τ)h(t-τ) dτ'
+                    });
+                }
+
+                // Amplifier / Op-Amp
+                if (question.includes('amplifier') || question.includes('op-amp') || question.includes('operational amplifier')) {
+                    return this.formatResponse({
+                        definition: 'An amplifier is an electronic circuit that increases the power, voltage, or current of input signals while maintaining signal fidelity, using active devices and external power supply.',
+                        explanation: 'Amplifiers use transistors or operational amplifiers with feedback to provide controlled gain. Different classes (A, B, AB, C) offer trade-offs between linearity, efficiency, and distortion based on conduction angle.',
+                        keyPoints: [
+                            'Provides signal amplification with external power',
+                            'Characterized by gain, bandwidth, and input/output impedance',
+                            'Classes A, B, AB, C determine efficiency and linearity',
+                            'Negative feedback improves stability and reduces distortion',
+                            'Op-amps approach ideal amplifier characteristics',
+                            'Essential building blocks in analog signal processing'
+                        ],
+                        mathematical: 'Voltage gain Av = Vout/Vin, power gain Ap = Pout/Pin, expressed in decibels as 20log₁₀(Av) for voltage.',
+                        example: 'Audio amplifiers in stereo systems boost millivolt signals from microphones to volt levels for driving speakers.',
+                        equation: 'Gain (dB) = 20log₁₀(Vout/Vin), Ideal Op-amp: Av → ∞, Rin → ∞, Rout → 0'
+                    });
+                }
+
+                // Digital Logic Gates
+                if (question.includes('logic') && (question.includes('gate') || question.includes('digital') || question.includes('boolean'))) {
+                    return this.formatResponse({
+                        definition: 'Digital logic gates are fundamental electronic circuits that perform Boolean algebraic operations on binary inputs to produce binary outputs, implementing logical functions.',
+                        explanation: 'Logic gates process digital signals representing logical 0 and 1 states using Boolean algebra principles. They form combinational and sequential circuits that constitute all digital systems from calculators to microprocessors.',
+                        keyPoints: [
+                            'Implement Boolean algebraic functions (AND, OR, NOT, etc.)',
+                            'Process binary signals with defined voltage levels',
+                            'Basic gates: AND, OR, NOT, NAND, NOR, XOR, XNOR',
+                            'Characterized by propagation delay, fan-in, and fan-out',
+                            'Universal gates (NAND, NOR) can implement any Boolean function',
+                            'Foundation for combinational and sequential digital circuits'
+                        ],
+                        mathematical: 'Boolean algebra governs operations with laws like De Morgan\'s theorem, distributive, and associative properties.',
+                        example: 'Microprocessor ALUs use thousands of logic gates to perform arithmetic operations like addition and multiplication.',
+                        equation: 'De Morgan\'s Laws: (A+B)\' = A\'·B\', (A·B)\' = A\'+B\''
+                    });
+                }
+
+                // Control Systems
+                if (question.includes('control') && question.includes('system')) {
+                    return this.formatResponse({
+                        definition: 'Control systems are engineered systems that manage and regulate the behavior of other systems using feedback mechanisms to achieve desired performance objectives.',
+                        explanation: 'Control systems use sensors to measure output, compare with reference input, and adjust system behavior through actuators. Feedback control provides stability, accuracy, disturbance rejection, and improved transient response.',
+                        keyPoints: [
+                            'Uses feedback loops for automatic regulation',
+                            'Components: plant, controller, sensor, actuator',
+                            'Open-loop vs closed-loop configurations',
+                            'Stability analyzed using pole locations',
+                            'Performance metrics: settling time, overshoot, steady-state error',
+                            'PID controllers widely used in industrial applications'
+                        ],
+                        mathematical: 'Transfer functions relate output to input in s-domain, enabling frequency response and stability analysis.',
+                        example: 'Automotive cruise control maintains constant vehicle speed despite hills and wind by adjusting throttle position.',
+                        equation: 'Closed-loop TF: T(s) = G(s)/(1+G(s)H(s)), PID: Gc(s) = Kp + Ki/s + Kds'
+                    });
+                }
+
+                // Antenna Theory
+                if (question.includes('antenna') || question.includes('radiation') || question.includes('electromagnetic')) {
+                    return this.formatResponse({
+                        definition: 'An antenna is a transducer that converts electrical energy into electromagnetic waves for transmission or vice versa for reception, enabling wireless communication.',
+                        explanation: 'Antennas radiate electromagnetic energy by accelerating charges in conductors. The radiation pattern, gain, and impedance characteristics determine transmission efficiency and directional properties for specific applications.',
+                        keyPoints: [
+                            'Converts electrical energy to electromagnetic waves',
+                            'Characterized by radiation pattern, gain, and impedance',
+                            'Reciprocity: same properties for transmission and reception',
+                            'Length typically related to wavelength (λ/4, λ/2)',
+                            'Directional antennas focus energy in specific directions',
+                            'Impedance matching critical for power transfer'
+                        ],
+                        mathematical: 'Antenna gain G = 4π(effective area)/λ², directivity D relates to beamwidth and radiation pattern.',
+                        example: 'Cellular base stations use directional antennas to focus RF energy toward specific coverage areas while minimizing interference.',
+                        equation: 'Friis equation: Pr/Pt = GtGr(λ/4πR)²'
+                    });
+                }
+
+                // Filter Design
+                if (question.includes('filter') && (question.includes('design') || question.includes('frequency') || question.includes('response'))) {
+                    return this.formatResponse({
+                        definition: 'Filters are frequency-selective circuits that allow certain frequency components to pass while attenuating others, shaping the frequency response of signals.',
+                        explanation: 'Filters use reactive components (L, C) or digital algorithms to create frequency-dependent transfer functions. They remove unwanted noise, separate signal bands, or shape spectral content for specific applications.',
+                        keyPoints: [
+                            'Types: low-pass, high-pass, band-pass, band-stop',
+                            'Analog filters use RLC components',
+                            'Digital filters use difference equations and DSP',
+                            'Characterized by cutoff frequency, roll-off rate, ripple',
+                            'Active filters use op-amps for gain and isolation',
+                            'Filter order determines roll-off steepness'
+                        ],
+                        mathematical: 'First-order filters have 20 dB/decade roll-off, nth-order filters have n×20 dB/decade roll-off beyond cutoff.',
+                        example: 'Audio crossover networks use filters to separate bass, midrange, and treble frequencies for different speakers.',
+                        equation: 'Low-pass: H(s) = 1/(1+s/ωc), Roll-off: -20n dB/decade'
+                    });
+                }
+
+                // Bode Plot
+                if (question.includes('bode') && question.includes('plot')) {
+                    return this.formatResponse({
+                        definition: 'Bode plots are graphical representations of a system\'s frequency response, showing magnitude (in dB) and phase (in degrees) versus frequency on logarithmic scales.',
+                        explanation: 'Bode plots provide insight into system stability, bandwidth, and frequency characteristics. They use straight-line approximations to simplify analysis of complex transfer functions by breaking them into simple pole and zero contributions.',
+                        keyPoints: [
+                            'Two plots: magnitude (dB) and phase (degrees) vs log frequency',
+                            'Straight-line approximations simplify complex transfer functions',
+                            'Poles contribute -20 dB/decade slope and -90° phase shift',
+                            'Zeros contribute +20 dB/decade slope and +90° phase shift',
+                            'Corner frequency occurs at pole/zero locations',
+                            'Used for stability analysis and controller design'
+                        ],
+                        mathematical: 'Magnitude: 20log₁₀|H(jω)|, Phase: ∠H(jω), where each pole/zero contributes predictable slopes.',
+                        example: 'Amplifier design uses Bode plots to ensure stability margins and avoid oscillation in feedback systems.',
+                        equation: 'Pole at s=-a: Magnitude slope -20 dB/dec, Phase -90°'
+                    });
+                }
+
+                // If no specific ECE topic match found, provide a technical signal processing answer
+                // (since this is integrated with a signal generator)
+                return this.formatResponse({
+                    definition: 'Signal processing involves the analysis, modification, and synthesis of signals such as sound, images, and sensor data using mathematical and computational techniques.',
+                    explanation: 'Digital signal processing uses algorithms to filter, transform, compress, and extract information from digitized signals. It combines mathematical theory with computational implementation for real-time and offline processing applications.',
+                    keyPoints: [
+                        'Involves sampling, quantization, and digital representation',
+                        'Uses transforms (FFT, DFT, Z-transform) for frequency analysis',
+                        'Implements digital filters for noise reduction and enhancement',
+                        'Applies convolution for system response analysis',
+                        'Enables real-time processing with DSP hardware',
+                        'Foundation for modern communication and multimedia systems'
+                    ],
+                    mathematical: 'Based on discrete-time signal theory: x[n] = x(nT), where T is sampling period and processing uses difference equations.',
+                    example: 'Smartphone audio processing uses DSP chips to implement noise cancellation, equalization, and compression algorithms.',
+                    equation: 'Discrete signal: x[n], Digital filter: y[n] = Σ h[k]x[n-k]'
+                });
+            }
+
+            formatResponse(knowledge) {
+                let response = `<strong>Definition:</strong> ${knowledge.definition}<br><br>`;
+                response += `<strong>Conceptual Explanation:</strong> ${knowledge.explanation}<br><br>`;
+                response += `<strong>Key Points:</strong><br>`;
+                
+                for (const point of knowledge.keyPoints) {
+                    response += `• ${point}<br>`;
+                }
+                
+                if (knowledge.mathematical) {
+                    response += `<br><strong>Mathematical Insight:</strong> ${knowledge.mathematical}<br>`;
+                }
+                
+                if (knowledge.example) {
+                    response += `<br><strong>Example/Application:</strong> ${knowledge.example}`;
+                }
+                
+                if (knowledge.equation) {
+                    response += `<br><br><strong>Mathematical Expression:</strong> <code>${knowledge.equation}</code>`;
+                }
+                
+                return response;
+            }
+        }
+
+        // Signal Generator JavaScript Implementation
+        class SignalGenerator {
+            constructor() {
+                this.signalType = 'sine';
+                this.frequency = 2;
+                this.amplitude = 1;
+                this.sampleRate = 1000;
+                this.duration = 2;
+                this.chart = null;
+                this.isDarkMode = false;
+                
+                this.initializeChart();
+                this.bindEvents();
+                this.generateSignal();
+            }
+
+            initializeChart() {
+                const ctx = document.getElementById('signalChart').getContext('2d');
+                this.chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Sine Wave',
+                            data: [],
+                            borderColor: '#3b82f6',
+                            backgroundColor: '#3b82f620',
+                            borderWidth: 2,
+                            fill: false,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            tension: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    color: this.isDarkMode ? '#e5e7eb' : '#374151',
+                                    font: { size: 12, family: 'Inter, sans-serif' }
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Sine Wave - Time Domain',
+                                color: this.isDarkMode ? '#f9fafb' : '#111827',
+                                font: { size: 16, weight: 'bold', family: 'Inter, sans-serif' }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: 'Time (seconds)',
+                                    color: this.isDarkMode ? '#e5e7eb' : '#374151',
+                                    font: { size: 12, weight: 'bold', family: 'Inter, sans-serif' }
+                                },
+                                ticks: {
+                                    color: this.isDarkMode ? '#9ca3af' : '#6b7280',
+                                    font: { size: 10, family: 'Inter, sans-serif' }
+                                },
+                                grid: {
+                                    color: this.isDarkMode ? '#374151' : '#e5e7eb',
+                                    lineWidth: 0.5
+                                }
+                            },
+                            y: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: 'Amplitude',
+                                    color: this.isDarkMode ? '#e5e7eb' : '#374151',
+                                    font: { size: 12, weight: 'bold', family: 'Inter, sans-serif' }
+                                },
+                                ticks: {
+                                    color: this.isDarkMode ? '#9ca3af' : '#6b7280',
+                                    font: { size: 10, family: 'Inter, sans-serif' }
+                                },
+                                grid: {
+                                    color: this.isDarkMode ? '#374151' : '#e5e7eb',
+                                    lineWidth: 0.5
+                                }
+                            }
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        }
+                    }
+                });
+            }
+
+            bindEvents() {
+                // Signal type buttons
+                document.querySelectorAll('.signal-type-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.signal-type-btn').forEach(b => {
+                            b.classList.remove('btn-primary');
+                            b.classList.add('border-gray-300', 'dark:border-gray-600', 'hover:bg-gray-100', 'dark:hover:bg-gray-800');
+                        });
+                        e.target.classList.add('btn-primary');
+                        e.target.classList.remove('border-gray-300', 'dark:border-gray-600', 'hover:bg-gray-100', 'dark:hover:bg-gray-800');
+                        this.signalType = e.target.dataset.type;
+                        this.generateSignal();
+                    });
+                });
+
+                // Frequency slider
+                document.getElementById('frequencySlider').addEventListener('input', (e) => {
+                    this.frequency = parseFloat(e.target.value);
+                    document.getElementById('frequencyValue').textContent = this.frequency;
+                    this.generateSignal();
+                });
+
+                // Amplitude slider
+                document.getElementById('amplitudeSlider').addEventListener('input', (e) => {
+                    this.amplitude = parseFloat(e.target.value);
+                    document.getElementById('amplitudeValue').textContent = this.amplitude;
+                    this.generateSignal();
+                });
+
+                // Theme toggle
+                document.getElementById('themeToggle').addEventListener('click', () => {
+                    this.toggleTheme();
+                });
+
+                // Interactive Features Cards
+                this.bindInteractiveFeatures();
+            }
+
+            /**
+             * Bind interactive functionality to feature cards
+             * Implements smooth scrolling and section highlighting
+             */
+            bindInteractiveFeatures() {
+                // Signal Generation Card - Navigate to signal type controls
+                document.getElementById('signalGenCard').addEventListener('click', () => {
+                    this.navigateToSection('signalTypeControls', 'Signal Generation');
+                    this.highlightSignalTypes();
+                });
+
+                // Parameter Control Card - Navigate to parameter controls
+                document.getElementById('parameterCard').addEventListener('click', () => {
+                    this.navigateToSection('parameterControls', 'Parameter Control');
+                    this.highlightParameters();
+                });
+
+                // Academic Focus Card - Navigate to equation section
+                document.getElementById('academicCard').addEventListener('click', () => {
+                    this.navigateToSection('equationSection', 'Mathematical Equations');
+                    this.highlightEquation();
+                });
+            }
+
+            /**
+             * Navigate smoothly to a target section
+             * @param {string} targetId - ID of the target element
+             * @param {string} sectionName - Name for console logging
+             */
+            navigateToSection(targetId, sectionName) {
+                const targetElement = document.getElementById(targetId);
+                if (targetElement) {
+                    // Smooth scroll to target
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center',
+                        inline: 'nearest'
+                    });
+                    
+                    console.log(`Navigated to ${sectionName} section`);
+                } else {
+                    console.warn(`Target element ${targetId} not found`);
+                }
+            }
+
+            /**
+             * Highlight signal type controls with visual feedback
+             */
+            highlightSignalTypes() {
+                const signalControls = document.getElementById('signalTypeControls');
+                this.addTemporaryHighlight(signalControls);
+                
+                // Briefly highlight each signal type button
+                setTimeout(() => {
+                    document.querySelectorAll('.signal-type-btn').forEach((btn, index) => {
+                        setTimeout(() => {
+                            this.addButtonPulse(btn);
+                        }, index * 200);
+                    });
+                }, 500);
+            }
+
+            /**
+             * Highlight parameter controls (frequency and amplitude sliders)
+             */
+            highlightParameters() {
+                const parameterControls = document.getElementById('parameterControls');
+                this.addTemporaryHighlight(parameterControls);
+                
+                // Highlight sliders
+                setTimeout(() => {
+                    const frequencySlider = document.getElementById('frequencySlider');
+                    const amplitudeSlider = document.getElementById('amplitudeSlider');
+                    
+                    this.addControlHighlight(frequencySlider.parentElement);
+                    setTimeout(() => {
+                        this.addControlHighlight(amplitudeSlider.parentElement);
+                    }, 300);
+                }, 500);
+            }
+
+            /**
+             * Highlight the mathematical equation section
+             */
+            highlightEquation() {
+                const equationSection = document.getElementById('equationSection');
+                this.addTemporaryHighlight(equationSection);
+                
+                // Pulse the equation display
+                setTimeout(() => {
+                    const equationDisplay = document.getElementById('equationDisplay');
+                    this.addEquationPulse(equationDisplay);
+                }, 500);
+            }
+
+            /**
+             * Add temporary highlight animation to an element
+             * @param {HTMLElement} element - Element to highlight
+             */
+            addTemporaryHighlight(element) {
+                if (!element) return;
+                
+                element.classList.add('highlight-pulse');
+                setTimeout(() => {
+                    element.classList.remove('highlight-pulse');
+                }, 2000);
+            }
+
+            /**
+             * Add control highlight to parameter controls
+             * @param {HTMLElement} element - Control element to highlight
+             */
+            addControlHighlight(element) {
+                if (!element) return;
+                
+                element.classList.add('control-highlight');
+                setTimeout(() => {
+                    element.classList.remove('control-highlight');
+                }, 1500);
+            }
+
+            /**
+             * Add pulse animation to signal type buttons
+             * @param {HTMLElement} button - Button to pulse
+             */
+            addButtonPulse(button) {
+                if (!button) return;
+                
+                const originalTransform = button.style.transform;
+                button.style.transform = 'scale(1.1)';
+                button.style.transition = 'transform 0.2s ease';
+                
+                setTimeout(() => {
+                    button.style.transform = originalTransform;
+                }, 200);
+            }
+
+            /**
+             * Add pulse animation to equation display
+             * @param {HTMLElement} equation - Equation element to pulse
+             */
+            addEquationPulse(equation) {
+                if (!equation) return;
+                
+                equation.style.transform = 'scale(1.05)';
+                equation.style.transition = 'transform 0.3s ease';
+                equation.style.color = '#1d4ed8';
+                
+                setTimeout(() => {
+                    equation.style.transform = 'scale(1)';
+                    equation.style.color = '';
+                }, 300);
+            }
+
+            generateSignal() {
+                const samples = Math.floor(this.sampleRate * this.duration);
+                const time = [];
+                const amplitude = [];
+
+                // Generate time axis and signal values
+                for (let i = 0; i < samples; i++) {
+                    const t = i / this.sampleRate;
+                    time.push(t.toFixed(3));
+                    
+                    let value;
+                    switch (this.signalType) {
+                        case 'sine':
+                            value = this.amplitude * Math.sin(2 * Math.PI * this.frequency * t);
+                            break;
+                        case 'cosine':
+                            value = this.amplitude * Math.cos(2 * Math.PI * this.frequency * t);
+                            break;
+                        case 'square':
+                            value = this.amplitude * Math.sign(Math.sin(2 * Math.PI * this.frequency * t));
+                            break;
+                        default:
+                            value = 0;
+                    }
+                    amplitude.push(value);
+                }
+
+                // Update chart
+                this.chart.data.labels = time;
+                this.chart.data.datasets[0].data = amplitude;
+                this.chart.data.datasets[0].label = `${this.signalType.charAt(0).toUpperCase() + this.signalType.slice(1)} Wave`;
+                
+                // Update colors based on signal type
+                const colors = {
+                    sine: '#3b82f6',
+                    cosine: '#10b981',
+                    square: '#f59e0b'
+                };
+                this.chart.data.datasets[0].borderColor = colors[this.signalType];
+                this.chart.data.datasets[0].backgroundColor = colors[this.signalType] + '20';
+                
+                // Update title
+                this.chart.options.plugins.title.text = `${this.signalType.charAt(0).toUpperCase() + this.signalType.slice(1)} Wave - Time Domain`;
+                
+                this.chart.update();
+
+                // Update mathematical equation display with proper academic notation
+                this.updateEquationDisplay();
+
+                // Update signal properties
+                document.getElementById('displayFreq').textContent = `${this.frequency} Hz`;
+                document.getElementById('displayPeriod').textContent = `${(1/this.frequency).toFixed(3)} s`;
+                document.getElementById('displayAmp').textContent = this.amplitude;
+            }
+
+            updateEquationDisplay() {
+                let equation;
+                let functionName;
+                
+                switch (this.signalType) {
+                    case 'sine':
+                        equation = `${this.amplitude} sin(2π × ${this.frequency} × t)`;
+                        functionName = 'sin';
+                        break;
+                    case 'cosine':
+                        equation = `${this.amplitude} cos(2π × ${this.frequency} × t)`;
+                        functionName = 'cos';
+                        break;
+                    case 'square':
+                        equation = `${this.amplitude} · sgn(sin(2π × ${this.frequency} × t))`;
+                        functionName = 'sgn';
+                        break;
+                }
+                
+                // Update main equation display
+                document.getElementById('equationDisplay').textContent = equation;
+                
+                // Update parameter displays
+                document.getElementById('amplitudeParam').textContent = this.amplitude;
+                document.getElementById('frequencyParam').textContent = this.frequency;
+            }
+
+            toggleTheme() {
+                this.isDarkMode = !this.isDarkMode;
+                document.documentElement.classList.toggle('dark');
+                document.getElementById('themeIcon').textContent = this.isDarkMode ? '☀️' : '🌙';
+                
+                // Update chart colors for theme
+                const textColor = this.isDarkMode ? '#e5e7eb' : '#374151';
+                const titleColor = this.isDarkMode ? '#f9fafb' : '#111827';
+                const gridColor = this.isDarkMode ? '#374151' : '#e5e7eb';
+                
+                this.chart.options.plugins.legend.labels.color = textColor;
+                this.chart.options.plugins.title.color = titleColor;
+                this.chart.options.scales.x.title.color = textColor;
+                this.chart.options.scales.x.ticks.color = textColor;
+                this.chart.options.scales.x.grid.color = gridColor;
+                this.chart.options.scales.y.title.color = textColor;
+                this.chart.options.scales.y.ticks.color = textColor;
+                this.chart.options.scales.y.grid.color = gridColor;
+                
+                this.chart.update();
+            }
+        }
+
+        // Initialize the application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new SignalGenerator();
+            new ECEChatbot();
+        });
+    </script>
+</body>
+</html>
